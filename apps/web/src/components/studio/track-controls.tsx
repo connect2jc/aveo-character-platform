@@ -1,10 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { Scissors, Volume2, Trash2, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { StudioTrack } from '@/types';
-import { formatDuration } from '@/lib/utils';
 
 interface TrackControlsProps {
   track: StudioTrack | null;

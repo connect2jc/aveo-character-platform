@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { Film, Upload, Plus, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { formatDuration } from '@/lib/utils';
 import api from '@/lib/api';
 import type { Video } from '@/types';
@@ -16,7 +14,7 @@ interface VideoGridProps {
 
 export function VideoGrid({ onSelect, onUpload, uploadedFiles }: VideoGridProps) {
   const [videos, setVideos] = useState<Video[]>([]);
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [, setHoveredId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadVideos = async () => {

@@ -19,7 +19,7 @@ export function Timeline({ tracks, selectedTrackId, onSelectTrack, onAddTrack }:
   const [zoom, setZoom] = useState(1);
   const pixelsPerSecond = PIXELS_PER_SECOND_BASE * zoom;
 
-  const { videoTracks, audioTracks, totalDuration } = useMemo(() => {
+  const { totalDuration } = useMemo(() => {
     const videoTracks = tracks.filter((t) => t.type === 'video');
     const audioTracks = tracks.filter((t) => t.type === 'audio');
 
