@@ -14,8 +14,9 @@ export function useStudio() {
       const { data } = await api.get(`/api/v1/studio/projects?page=${page}`);
       setProjects(data.data.projects);
       return data.data;
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to load projects');
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { error?: { message?: string } } } };
+      setError(e.response?.data?.error?.message || 'Failed to load projects');
     } finally {
       setLoading(false);
     }
@@ -27,8 +28,9 @@ export function useStudio() {
       const { data } = await api.get(`/api/v1/studio/projects/${id}`);
       setProject(data.data.project);
       return data.data.project;
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to load project');
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { error?: { message?: string } } } };
+      setError(e.response?.data?.error?.message || 'Failed to load project');
     } finally {
       setLoading(false);
     }

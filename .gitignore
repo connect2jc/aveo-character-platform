@@ -49,3 +49,4 @@ temp/
 apps/api/prisma/dev.db
 apps/api/uploads/
 screenshots/
+.vercel

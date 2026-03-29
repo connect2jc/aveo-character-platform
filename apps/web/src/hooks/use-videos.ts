@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
-import { Video, ApiResponse, PaginatedResponse } from '@/types';
+import { Video, ApiResponse } from '@/types';
 
 export function useVideos(characterId?: string) {
   const [videos, setVideos] = useState<Video[]>([]);
@@ -17,7 +17,8 @@ export function useVideos(characterId?: string) {
     try {
       const params = new URLSearchParams({ page: page.toString() });
       if (characterId) params.set('character_id', characterId);
-      const { data } = await api.get<any>(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await api.get<Record<string, any>>(
         `/api/v1/videos?${params}`
       );
       // API returns { success, data: { videos, total, page, limit, totalPages } }
