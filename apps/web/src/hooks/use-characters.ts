@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
-import { Character, ApiResponse, PaginatedResponse } from '@/types';
+import { Character } from '@/types';
 
 export function useCharacters() {
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -13,10 +13,10 @@ export function useCharacters() {
     setIsLoading(true);
     setError(null);
     try {
-      const { data } = await api.get<PaginatedResponse<Character>>(
+      const { data } = await api.get<{ success: boolean; data: { characters: Character[]; total: number } }>(
         '/api/v1/characters'
       );
-      setCharacters(data.data);
+      setCharacters(data.data.characters || []);
     } catch (err) {
       setError('Failed to load characters');
       console.error(err);
@@ -32,26 +32,26 @@ export function useCharacters() {
   const createCharacter = async (
     character: Partial<Character>
   ): Promise<Character> => {
-    const { data } = await api.post<ApiResponse<Character>>(
+    const { data } = await api.post<{ success: boolean; data: { character: Character } }>(
       '/api/v1/characters',
       character
     );
-    setCharacters((prev) => [...prev, data.data]);
-    return data.data;
+    setCharacters((prev) => [...prev, data.data.character]);
+    return data.data.character;
   };
 
   const updateCharacter = async (
     id: string,
     updates: Partial<Character>
   ): Promise<Character> => {
-    const { data } = await api.patch<ApiResponse<Character>>(
+    const { data } = await api.patch<{ success: boolean; data: { character: Character } }>(
       `/api/v1/characters/${id}`,
       updates
     );
     setCharacters((prev) =>
-      prev.map((c) => (c.id === id ? data.data : c))
+      prev.map((c) => (c.id === id ? data.data.character : c))
     );
-    return data.data;
+    return data.data.character;
   };
 
   const deleteCharacter = async (id: string): Promise<void> => {
@@ -79,8 +79,8 @@ export function useCharacter(id: string) {
     if (!id) return;
     setIsLoading(true);
     api
-      .get<ApiResponse<Character>>(`/api/v1/characters/${id}`)
-      .then(({ data }) => setCharacter(data.data))
+      .get<{ success: boolean; data: { character: Character } }>(`/api/v1/characters/${id}`)
+      .then(({ data }) => setCharacter(data.data.character))
       .catch(() => setError('Failed to load character'))
       .finally(() => setIsLoading(false));
   }, [id]);

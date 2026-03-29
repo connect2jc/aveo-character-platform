@@ -122,13 +122,35 @@ model User {
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
 
+  scriptProvider        String              @default("anthropic")
+  imageProvider         String              @default("fal")
+  voiceProvider         String              @default("elevenlabs")
+
   characters            Character[]
   usageTracking         UsageTracking[]
   platformConnections   PlatformConnection[]
   videos                Video[]
+  apiKeys               UserApiKey[]
+  studioProjects        StudioProject[]
 
   @@index([email])
   @@index([stripeCustomerId])
+}
+
+model UserApiKey {
+  id            String   @id @default(uuid())
+  userId        String
+  provider      String
+  encryptedKey  String   @db.Text
+  iv            String
+  isValid       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@index([userId])
 }
 
 model Character {
@@ -354,4 +376,42 @@ model PlatformConnection {
 
   @@unique([userId, platform])
   @@index([userId])
+}
+
+model StudioProject {
+  id            String         @id @default(uuid())
+  userId        String
+  title         String
+  status        String         @default("DRAFT")
+  outputUrl     String?
+  thumbnailUrl  String?
+  totalDuration Float?
+  aspectRatio   String         @default("9:16")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks        StudioTrack[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model StudioTrack {
+  id            String         @id @default(uuid())
+  projectId     String
+  type          String
+  sourceUrl     String
+  fileName      String?
+  startTime     Float          @default(0)
+  duration      Float?
+  trimStart     Float          @default(0)
+  trimEnd       Float?
+  volume        Float          @default(1.0)
+  trackIndex    Int            @default(0)
+  createdAt     DateTime       @default(now())
+
+  project       StudioProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }

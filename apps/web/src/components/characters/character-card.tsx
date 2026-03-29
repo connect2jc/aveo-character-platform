@@ -15,22 +15,22 @@ interface CharacterCardProps {
 }
 
 export function CharacterCard({ character, onDelete, videoCount = 0, scriptCount = 0 }: CharacterCardProps) {
-  const statusConfig = {
-    draft: { variant: 'secondary' as const, dot: 'bg-gray-400' },
-    active: { variant: 'success' as const, dot: 'bg-green-500' },
-    archived: { variant: 'warning' as const, dot: 'bg-yellow-500' },
+  const statusConfig: Record<string, { variant: 'secondary' | 'success' | 'warning'; dot: string }> = {
+    DRAFT: { variant: 'secondary', dot: 'bg-gray-400' },
+    ACTIVE: { variant: 'success', dot: 'bg-green-500' },
+    ARCHIVED: { variant: 'warning', dot: 'bg-yellow-500' },
   };
 
-  const config = statusConfig[character.status];
+  const config = statusConfig[character.status] || statusConfig.DRAFT;
 
   return (
     <Card className="group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
       <CardContent className="p-0">
         {/* Character Image with Gradient Overlay */}
         <div className="relative h-52 overflow-hidden bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
-          {character.base_image_url ? (
+          {character.baseImageUrl ? (
             <img
-              src={character.base_image_url}
+              src={character.baseImageUrl}
               alt={character.name}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
@@ -120,20 +120,20 @@ export function CharacterCard({ character, onDelete, videoCount = 0, scriptCount
             </div>
           </div>
 
-          {/* Personality Traits */}
-          {character.personality_traits.length > 0 && (
+          {/* Anti Keywords as tags */}
+          {character.antiKeywords && character.antiKeywords.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {character.personality_traits.slice(0, 3).map((trait) => (
+              {character.antiKeywords.slice(0, 3).map((keyword) => (
                 <span
-                  key={trait}
+                  key={keyword}
                   className="rounded-md bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-600"
                 >
-                  {trait}
+                  {keyword}
                 </span>
               ))}
-              {character.personality_traits.length > 3 && (
+              {character.antiKeywords.length > 3 && (
                 <span className="rounded-md bg-gray-50 px-2 py-0.5 text-xs text-gray-400">
-                  +{character.personality_traits.length - 3} more
+                  +{character.antiKeywords.length - 3} more
                 </span>
               )}
             </div>

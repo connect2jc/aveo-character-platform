@@ -14,10 +14,16 @@ export class HeygenService {
     };
   }
 
+  private getHeaders(apiKey?: string): Record<string, string> {
+    if (apiKey) return { ...this.headers, 'X-Api-Key': apiKey };
+    return this.headers;
+  }
+
   async createPhotoToVideo(
     imageUrl: string,
     audioUrl: string,
-    motionPrompt?: string
+    motionPrompt?: string,
+    apiKey?: string
   ): Promise<{ jobId: string }> {
     logger.info('Creating HeyGen photo-to-video', { imageUrl: imageUrl.slice(0, 50) });
 
@@ -47,7 +53,7 @@ export class HeygenService {
           height: 1920,
         },
       },
-      { headers: this.headers, timeout: 30000 }
+      { headers: this.getHeaders(apiKey), timeout: 30000 }
     );
 
     const jobId = response.data.data?.video_id;
@@ -59,7 +65,7 @@ export class HeygenService {
     return { jobId };
   }
 
-  async getVideoStatus(jobId: string): Promise<{
+  async getVideoStatus(jobId: string, apiKey?: string): Promise<{
     status: 'processing' | 'completed' | 'failed';
     videoUrl?: string;
     thumbnailUrl?: string;
@@ -68,7 +74,7 @@ export class HeygenService {
   }> {
     const response = await axios.get(
       `${HEYGEN_BASE_URL}/video_status.get?video_id=${jobId}`,
-      { headers: this.headers }
+      { headers: this.getHeaders(apiKey) }
     );
 
     const data = response.data.data;
@@ -100,16 +106,16 @@ export class HeygenService {
     return status.videoUrl;
   }
 
-  async listAvatars(): Promise<any[]> {
+  async listAvatars(apiKey?: string): Promise<any[]> {
     const response = await axios.get(`${HEYGEN_BASE_URL}/avatars`, {
-      headers: this.headers,
+      headers: this.getHeaders(apiKey),
     });
     return response.data.data?.avatars || [];
   }
 
-  async getRemainingCredits(): Promise<number> {
+  async getRemainingCredits(apiKey?: string): Promise<number> {
     const response = await axios.get(`${HEYGEN_BASE_URL}/user/remaining_quota`, {
-      headers: this.headers,
+      headers: this.getHeaders(apiKey),
     });
     return response.data.data?.remaining_quota || 0;
   }

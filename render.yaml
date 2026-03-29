@@ -1,0 +1,40 @@
+databases:
+  - name: aveo-db
+    plan: free
+    databaseName: aveo_character_platform
+    user: aveo
+
+services:
+  - type: web
+    name: aveo-api
+    plan: free
+    runtime: node
+    buildCommand: cd apps/api && npm install && npx prisma generate && npm run build
+    startCommand: cd apps/api && npx prisma migrate deploy && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: aveo-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: STRIPE_SECRET_KEY
+        value: sk_test_placeholder
+      - key: STRIPE_WEBHOOK_SECRET
+        value: whsec_placeholder
+      - key: ENCRYPTION_KEY
+        generateValue: true
+      - key: RESEND_API_KEY
+        value: re_placeholder
+      - key: APP_URL
+        value: https://aveo-platform.vercel.app
+      - key: API_URL
+        value: https://aveo-api.onrender.com
+      - key: USE_LOCAL_STORAGE
+        value: "true"

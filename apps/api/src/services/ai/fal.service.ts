@@ -14,7 +14,12 @@ export class FalService {
     };
   }
 
-  async generateCharacterImage(prompt: string, count: number = 4): Promise<{ images: { url: string; seed: number }[] }> {
+  private getHeaders(apiKey?: string): Record<string, string> {
+    if (apiKey) return { ...this.headers, 'Authorization': `Key ${apiKey}` };
+    return this.headers;
+  }
+
+  async generateCharacterImage(prompt: string, count: number = 4, apiKey?: string): Promise<{ images: { url: string; seed: number }[] }> {
     logger.info('Generating character images via FAL', { prompt: prompt.slice(0, 80) });
 
     const response = await axios.post(
@@ -27,7 +32,7 @@ export class FalService {
         num_images: count,
         enable_safety_checker: true,
       },
-      { headers: this.headers, timeout: 120000 }
+      { headers: this.getHeaders(apiKey), timeout: 120000 }
     );
 
     if (response.data.images) {
@@ -41,10 +46,10 @@ export class FalService {
 
     // Handle queued response
     const requestId = response.data.request_id;
-    return this.pollResult(requestId);
+    return this.pollResult(requestId, 60, apiKey);
   }
 
-  async generateVariation(baseImageUrl: string, variationPrompt: string): Promise<{ url: string }> {
+  async generateVariation(baseImageUrl: string, variationPrompt: string, apiKey?: string): Promise<{ url: string }> {
     logger.info('Generating image variation via FAL');
 
     const response = await axios.post(
@@ -57,7 +62,7 @@ export class FalService {
         guidance_scale: 3.5,
         num_images: 1,
       },
-      { headers: this.headers, timeout: 120000 }
+      { headers: this.getHeaders(apiKey), timeout: 120000 }
     );
 
     if (response.data.images?.[0]) {
@@ -65,23 +70,23 @@ export class FalService {
     }
 
     const requestId = response.data.request_id;
-    const result = await this.pollResult(requestId);
+    const result = await this.pollResult(requestId, 60, apiKey);
     return { url: result.images[0].url };
   }
 
-  private async pollResult(requestId: string, maxAttempts: number = 60): Promise<any> {
+  private async pollResult(requestId: string, maxAttempts: number = 60, apiKey?: string): Promise<any> {
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       const statusResponse = await axios.get(
         `${FAL_BASE_URL}/fal-ai/flux/dev/requests/${requestId}/status`,
-        { headers: this.headers }
+        { headers: this.getHeaders(apiKey) }
       );
 
       if (statusResponse.data.status === 'COMPLETED') {
         const resultResponse = await axios.get(
           `${FAL_BASE_URL}/fal-ai/flux/dev/requests/${requestId}`,
-          { headers: this.headers }
+          { headers: this.getHeaders(apiKey) }
         );
         return resultResponse.data;
       }

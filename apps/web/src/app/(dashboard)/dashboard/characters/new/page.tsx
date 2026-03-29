@@ -31,11 +31,8 @@ export default function NewCharacterPage() {
       const character = await createCharacter({
         name: data.name,
         niche: data.niche,
-        description: `${data.emotional_role} character for ${data.age_range_min}-${data.age_range_max} audience`,
-        target_audience: data.pain_points.join(', '),
-        personality_traits: data.personality_tags,
-        speaking_style: `Warmth: ${data.warmth}, Energy: ${data.energy}, Authority: ${data.authority}`,
-      });
+        targetAudience: `${data.age_range_min}-${data.age_range_max} year olds. Pain points: ${data.pain_points.join(', ')}${data.desires ? '. Desires: ' + data.desires : ''}`,
+      } as any);
       toast.success('Character created successfully!');
       router.push(`/dashboard/characters/${character.id}`);
     } catch {

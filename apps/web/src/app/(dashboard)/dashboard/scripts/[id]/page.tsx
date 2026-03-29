@@ -404,9 +404,9 @@ export default function ScriptDetailPage({ params }: { params: { id: string } })
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-3">
-                    {character.base_image_url ? (
+                    {character.baseImageUrl ? (
                       <img
-                        src={character.base_image_url}
+                        src={character.baseImageUrl}
                         alt={character.name}
                         className="h-10 w-10 rounded-full object-cover"
                       />
@@ -422,9 +422,9 @@ export default function ScriptDetailPage({ params }: { params: { id: string } })
                       <p className="text-xs text-gray-500">{character.niche}</p>
                     </div>
                   </div>
-                  {character.speaking_style && (
+                  {character.speakingStyle && (
                     <p className="mt-3 text-xs text-gray-500">
-                      {character.speaking_style}
+                      {character.speakingStyle}
                     </p>
                   )}
                 </CardContent>

@@ -310,9 +310,9 @@ export function ScriptEditor({
               {character ? (
                 <>
                   <div className="flex items-center gap-3">
-                    {character.base_image_url ? (
+                    {character.baseImageUrl ? (
                       <img
-                        src={character.base_image_url}
+                        src={character.baseImageUrl}
                         alt={character.name}
                         className="h-12 w-12 rounded-full object-cover"
                       />
@@ -329,39 +329,33 @@ export function ScriptEditor({
                     </div>
                   </div>
 
-                  {character.personality_traits.length > 0 && (
+                  {character.personality && (
                     <div>
                       <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-gray-400">
                         Personality
                       </p>
-                      <div className="flex flex-wrap gap-1">
-                        {character.personality_traits.map((trait) => (
-                          <Badge key={trait} variant="secondary" className="text-[10px]">
-                            {trait}
-                          </Badge>
-                        ))}
-                      </div>
+                      <p className="text-xs text-gray-600">{character.personality}</p>
                     </div>
                   )}
 
-                  {character.speaking_style && (
+                  {character.speakingStyle && (
                     <div>
                       <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-gray-400">
                         Speaking Style
                       </p>
                       <p className="text-sm text-gray-600">
-                        {character.speaking_style}
+                        {character.speakingStyle}
                       </p>
                     </div>
                   )}
 
-                  {character.target_audience && (
+                  {character.targetAudience && (
                     <div>
                       <p className="mb-1.5 text-xs font-medium uppercase tracking-wider text-gray-400">
                         Target Audience
                       </p>
                       <p className="text-sm text-gray-600">
-                        {character.target_audience}
+                        {character.targetAudience}
                       </p>
                     </div>
                   )}

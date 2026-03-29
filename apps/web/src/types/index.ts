@@ -20,19 +20,28 @@ export interface User {
 
 export interface Character {
   id: string;
-  user_id: string;
+  userId: string;
   name: string;
-  niche: string;
-  description?: string;
-  personality_traits: string[];
-  speaking_style?: string;
-  target_audience?: string;
-  base_image_url?: string;
-  voice_id?: string;
-  voice_settings?: VoiceSettings;
-  status: 'draft' | 'active' | 'archived';
-  created_at: string;
-  updated_at: string;
+  age?: number;
+  niche?: string;
+  originBackstory?: string;
+  coreBelief?: string;
+  personality?: string;
+  speakingStyle?: string;
+  targetAudience?: string;
+  baseImageUrl?: string;
+  imagePrompt?: string;
+  visualStyle?: string;
+  elevenlabsVoiceId?: string;
+  voicePrompt?: string;
+  voiceSettings?: VoiceSettings;
+  voiceSampleUrl?: string;
+  antiKeywords: string[];
+  status: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+  createdAt: string;
+  updatedAt: string;
+  variations?: CharacterVariation[];
+  _count?: { scripts: number; videos: number; calendars?: number };
 }
 
 export interface VoiceSettings {
@@ -184,6 +193,56 @@ export interface AuthTokens {
   refresh_token: string;
   token_type: string;
   expires_in: number;
+}
+
+// ============================================================
+// Settings / BYOK Types
+// ============================================================
+
+export interface ApiKeyStatus {
+  provider: string;
+  hasKey: boolean;
+  isValid: boolean;
+  updatedAt: string | null;
+}
+
+export interface ProviderPreferences {
+  scriptProvider: 'anthropic' | 'openai';
+  imageProvider: 'fal' | 'openai';
+  voiceProvider: 'elevenlabs' | 'openai';
+}
+
+// ============================================================
+// Studio Types
+// ============================================================
+
+export interface StudioProject {
+  id: string;
+  userId: string;
+  title: string;
+  status: 'DRAFT' | 'RENDERING' | 'COMPLETED' | 'FAILED';
+  outputUrl?: string;
+  thumbnailUrl?: string;
+  totalDuration?: number;
+  aspectRatio: string;
+  createdAt: string;
+  updatedAt: string;
+  tracks?: StudioTrack[];
+}
+
+export interface StudioTrack {
+  id: string;
+  projectId: string;
+  type: 'video' | 'audio';
+  sourceUrl: string;
+  fileName?: string;
+  startTime: number;
+  duration?: number;
+  trimStart: number;
+  trimEnd?: number;
+  volume: number;
+  trackIndex: number;
+  createdAt: string;
 }
 
 // ============================================================

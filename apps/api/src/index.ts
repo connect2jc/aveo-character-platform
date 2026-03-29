@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import path from 'path';
 import { env } from './config/env';
 import { errorHandler } from './middleware/error-handler';
 import { generalLimiter } from './middleware/rate-limit';
@@ -18,18 +19,23 @@ import publishingRoutes from './routes/publishing.routes';
 import billingRoutes from './routes/billing.routes';
 import adminRoutes from './routes/admin.routes';
 import webhooksRoutes from './routes/webhooks.routes';
+import settingsRoutes from './routes/settings.routes';
+import studioRoutes from './routes/studio.routes';
 
 const app = express();
 
 // Security
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 app.use(cors({
-  origin: env.APP_URL,
+  origin: env.APP_URL.split(',').map(u => u.trim()),
   credentials: true,
 }));
 
 // Webhooks need raw body (must come before json parser)
 app.use('/api/webhooks', webhooksRoutes);
+app.use('/api/v1/webhooks', webhooksRoutes);
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
@@ -41,21 +47,37 @@ app.use(morgan('short'));
 // Rate limiting
 app.use(generalLimiter);
 
+// Serve local uploads (for dev/testing without S3)
+app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
+
 // Health check
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// API routes
+// API routes (mount at both /api and /api/v1 for compatibility)
 app.use('/api/auth', authRoutes);
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/characters', charactersRoutes);
+app.use('/api/v1/characters', charactersRoutes);
 app.use('/api/calendars', calendarsRoutes);
+app.use('/api/v1/calendars', calendarsRoutes);
 app.use('/api/content-slots', contentSlotsRoutes);
+app.use('/api/v1/content-slots', contentSlotsRoutes);
 app.use('/api/scripts', scriptsRoutes);
+app.use('/api/v1/scripts', scriptsRoutes);
 app.use('/api/videos', videosRoutes);
+app.use('/api/v1/videos', videosRoutes);
 app.use('/api/publishing', publishingRoutes);
+app.use('/api/v1/publishing', publishingRoutes);
 app.use('/api/billing', billingRoutes);
+app.use('/api/v1/billing', billingRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/v1/admin', adminRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/v1/settings', settingsRoutes);
+app.use('/api/studio', studioRoutes);
+app.use('/api/v1/studio', studioRoutes);
 
 // 404 handler
 app.use((_req, res) => {

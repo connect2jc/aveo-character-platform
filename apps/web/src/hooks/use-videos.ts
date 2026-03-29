@@ -17,11 +17,13 @@ export function useVideos(characterId?: string) {
     try {
       const params = new URLSearchParams({ page: page.toString() });
       if (characterId) params.set('character_id', characterId);
-      const { data } = await api.get<PaginatedResponse<Video>>(
+      const { data } = await api.get<any>(
         `/api/v1/videos?${params}`
       );
-      setVideos(data.data);
-      setTotalPages(data.total_pages);
+      // API returns { success, data: { videos, total, page, limit, totalPages } }
+      const payload = data.data || data;
+      setVideos(Array.isArray(payload) ? payload : (payload.videos || []));
+      setTotalPages(payload.totalPages || payload.total_pages || 1);
     } catch (err) {
       setError('Failed to load videos');
       console.error(err);

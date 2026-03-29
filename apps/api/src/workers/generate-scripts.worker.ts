@@ -2,6 +2,8 @@ import { Worker, Job } from 'bullmq';
 import { prisma } from '../config/database';
 import { redisConnection } from '../config/redis';
 import { claudeService } from '../services/ai/claude.service';
+import { openaiService } from '../services/ai/openai.service';
+import { resolveScriptProvider } from '../utils/provider-resolver';
 import { estimateDuration } from '../utils/script-splitter';
 import { logger } from '../utils/logger';
 
@@ -26,6 +28,8 @@ export const scriptsWorker = new Worker<ScriptsJobData>(
 
       if (!character) throw new Error('Character not found');
 
+      const { provider: scriptProvider, apiKey: scriptApiKey } = await resolveScriptProvider(userId);
+
       const where: any = { calendarId, scriptId: null };
       if (slotIds?.length) {
         where.id = { in: slotIds };
@@ -40,23 +44,25 @@ export const scriptsWorker = new Worker<ScriptsJobData>(
 
       for (const slot of slots) {
         try {
-          const generatedScript = await claudeService.generateScript(
-            {
-              name: character.name,
-              personality: character.personality || '',
-              speakingStyle: character.speakingStyle || '',
-              coreBelief: character.coreBelief || '',
-              niche: character.niche || '',
-              antiKeywords: character.antiKeywords || [],
-            },
-            {
-              topic: slot.topic || 'general content',
-              hook: slot.hook || undefined,
-              emotionalTrigger: slot.emotionalTrigger || undefined,
-              cta: slot.cta || undefined,
-              platform: slot.platform,
-            }
-          );
+          const charInput = {
+            name: character.name,
+            personality: character.personality || '',
+            speakingStyle: character.speakingStyle || '',
+            coreBelief: character.coreBelief || '',
+            niche: character.niche || '',
+            antiKeywords: character.antiKeywords || [],
+          };
+          const slotInput = {
+            topic: slot.topic || 'general content',
+            hook: slot.hook || undefined,
+            emotionalTrigger: slot.emotionalTrigger || undefined,
+            cta: slot.cta || undefined,
+            platform: slot.platform,
+          };
+
+          const generatedScript = scriptProvider === 'openai'
+            ? await openaiService.generateScript(scriptApiKey, charInput, slotInput)
+            : await claudeService.generateScript(charInput, slotInput, scriptApiKey);
 
           const script = await prisma.script.create({
             data: {

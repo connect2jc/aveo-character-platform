@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils';
 export default function CharacterDetailPage({ params }: { params: { id: string } }) {
   const { character, isLoading } = useCharacter(params.id);
   const [isEditing, setIsEditing] = useState(false);
-  const [activeStatus, setActiveStatus] = useState<'active' | 'draft' | 'archived' | null>(null);
+  const [activeStatus, setActiveStatus] = useState<'ACTIVE' | 'DRAFT' | 'ARCHIVED' | null>(null);
 
   if (isLoading) {
     return (
@@ -72,13 +72,13 @@ export default function CharacterDetailPage({ params }: { params: { id: string }
 
   const currentStatus = activeStatus || character.status;
 
-  const statusConfig = {
-    draft: { variant: 'secondary' as const, label: 'Draft', dot: 'bg-gray-400' },
-    active: { variant: 'success' as const, label: 'Active', dot: 'bg-green-500' },
-    archived: { variant: 'warning' as const, label: 'Archived', dot: 'bg-yellow-500' },
+  const statusConfig: Record<string, { variant: 'secondary' | 'success' | 'warning'; label: string; dot: string }> = {
+    DRAFT: { variant: 'secondary', label: 'Draft', dot: 'bg-gray-400' },
+    ACTIVE: { variant: 'success', label: 'Active', dot: 'bg-green-500' },
+    ARCHIVED: { variant: 'warning', label: 'Archived', dot: 'bg-yellow-500' },
   };
 
-  const sConfig = statusConfig[currentStatus];
+  const sConfig = statusConfig[currentStatus] || statusConfig.DRAFT;
 
   return (
     <div className="space-y-6">
@@ -89,9 +89,9 @@ export default function CharacterDetailPage({ params }: { params: { id: string }
             <ArrowLeft className="h-5 w-5 text-gray-600" />
           </Link>
           <div className="flex items-center gap-4">
-            {character.base_image_url ? (
+            {character.baseImageUrl ? (
               <img
-                src={character.base_image_url}
+                src={character.baseImageUrl}
                 alt={character.name}
                 className="h-14 w-14 rounded-xl object-cover shadow-md ring-2 ring-white"
               />
@@ -114,7 +114,7 @@ export default function CharacterDetailPage({ params }: { params: { id: string }
         <div className="flex items-center gap-2">
           {/* Status Toggle */}
           <div className="flex rounded-lg border border-gray-200 p-0.5">
-            {(['active', 'draft', 'archived'] as const).map((status) => (
+            {(['ACTIVE', 'DRAFT', 'ARCHIVED'] as const).map((status) => (
               <button
                 key={status}
                 onClick={() => setActiveStatus(status)}
@@ -155,9 +155,9 @@ export default function CharacterDetailPage({ params }: { params: { id: string }
                 <div className="lg:col-span-1 space-y-4">
                   <Card>
                     <CardContent className="flex flex-col items-center py-8">
-                      {character.base_image_url ? (
+                      {character.baseImageUrl ? (
                         <img
-                          src={character.base_image_url}
+                          src={character.baseImageUrl}
                           alt={character.name}
                           className="h-28 w-28 rounded-2xl object-cover shadow-lg ring-4 ring-indigo-50"
                         />
@@ -173,17 +173,8 @@ export default function CharacterDetailPage({ params }: { params: { id: string }
                         {character.niche}
                       </span>
 
-                      {character.personality_traits.length > 0 && (
-                        <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-                          {character.personality_traits.map((trait) => (
-                            <span
-                              key={trait}
-                              className="rounded-lg bg-gradient-to-r from-indigo-50 to-purple-50 px-2.5 py-1 text-xs font-medium text-indigo-600"
-                            >
-                              {trait}
-                            </span>
-                          ))}
-                        </div>
+                      {character.personality && (
+                        <p className="mt-3 text-center text-xs text-gray-500 max-w-xs">{character.personality}</p>
                       )}
 
                       {!isEditing && (
@@ -227,12 +218,12 @@ export default function CharacterDetailPage({ params }: { params: { id: string }
                         <textarea
                           className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                           rows={4}
-                          defaultValue={character.description || ''}
+                          defaultValue={character.originBackstory || ''}
                           placeholder="Enter character backstory and description..."
                         />
                       ) : (
                         <p className="text-sm leading-relaxed text-gray-700">
-                          {character.description || 'No backstory defined yet. Edit this character to add a compelling backstory.'}
+                          {character.originBackstory || 'No backstory defined yet. Edit this character to add a compelling backstory.'}
                         </p>
                       )}
                     </CardContent>
@@ -250,12 +241,12 @@ export default function CharacterDetailPage({ params }: { params: { id: string }
                           <input
                             type="text"
                             className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                            defaultValue={character.speaking_style || ''}
+                            defaultValue={character.speakingStyle || ''}
                             placeholder="e.g., Casual and energetic"
                           />
                         ) : (
                           <p className="mt-1 text-sm text-gray-900">
-                            {character.speaking_style || 'Not specified'}
+                            {character.speakingStyle || 'Not specified'}
                           </p>
                         )}
                       </CardContent>
@@ -271,12 +262,12 @@ export default function CharacterDetailPage({ params }: { params: { id: string }
                           <input
                             type="text"
                             className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                            defaultValue={character.target_audience || ''}
+                            defaultValue={character.targetAudience || ''}
                             placeholder="e.g., Young professionals, 25 to 35"
                           />
                         ) : (
                           <p className="mt-1 text-sm text-gray-900">
-                            {character.target_audience || 'Not specified'}
+                            {character.targetAudience || 'Not specified'}
                           </p>
                         )}
                       </CardContent>
@@ -292,16 +283,16 @@ export default function CharacterDetailPage({ params }: { params: { id: string }
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      {character.voice_id ? (
+                      {character.elevenlabsVoiceId ? (
                         <div className="flex items-center gap-4 rounded-lg bg-gray-50 p-4">
                           <button className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 transition-colors hover:bg-indigo-200">
                             <Play className="h-5 w-5 ml-0.5" />
                           </button>
                           <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">Voice ID: {character.voice_id}</p>
-                            {character.voice_settings && (
+                            <p className="text-sm font-medium text-gray-900">Voice ID: {character.elevenlabsVoiceId}</p>
+                            {character.voiceSettings && (
                               <p className="mt-0.5 text-xs text-gray-500">
-                                Stability: {Math.round(character.voice_settings.stability * 100)}% | Similarity: {Math.round(character.voice_settings.similarity_boost * 100)}%
+                                Stability: {Math.round(character.voiceSettings.stability * 100)}% | Similarity: {Math.round(character.voiceSettings.similarity_boost * 100)}%
                               </p>
                             )}
                           </div>
@@ -359,7 +350,7 @@ export default function CharacterDetailPage({ params }: { params: { id: string }
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {character.voice_id ? (
+                  {character.elevenlabsVoiceId ? (
                     <div className="space-y-6">
                       {/* Voice Preview */}
                       <div className="rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 p-6">
@@ -369,7 +360,7 @@ export default function CharacterDetailPage({ params }: { params: { id: string }
                           </button>
                           <div className="flex-1">
                             <p className="text-sm font-semibold text-gray-900">Current Voice</p>
-                            <p className="text-xs text-gray-500">Voice ID: {character.voice_id}</p>
+                            <p className="text-xs text-gray-500">Voice ID: {character.elevenlabsVoiceId}</p>
                             {/* Waveform Visualization */}
                             <div className="mt-2 flex items-end gap-0.5 h-6">
                               {Array.from({ length: 40 }).map((_, i) => (
@@ -392,11 +383,11 @@ export default function CharacterDetailPage({ params }: { params: { id: string }
                             <div className="flex-1 h-2 rounded-full bg-gray-200">
                               <div
                                 className="h-full rounded-full bg-indigo-500"
-                                style={{ width: `${(character.voice_settings?.stability || 0.75) * 100}%` }}
+                                style={{ width: `${(character.voiceSettings?.stability || 0.75) * 100}%` }}
                               />
                             </div>
                             <span className="text-sm font-medium text-gray-900">
-                              {Math.round((character.voice_settings?.stability || 0.75) * 100)}%
+                              {Math.round((character.voiceSettings?.stability || 0.75) * 100)}%
                             </span>
                           </div>
                         </div>
@@ -406,11 +397,11 @@ export default function CharacterDetailPage({ params }: { params: { id: string }
                             <div className="flex-1 h-2 rounded-full bg-gray-200">
                               <div
                                 className="h-full rounded-full bg-purple-500"
-                                style={{ width: `${(character.voice_settings?.similarity_boost || 0.75) * 100}%` }}
+                                style={{ width: `${(character.voiceSettings?.similarity_boost || 0.75) * 100}%` }}
                               />
                             </div>
                             <span className="text-sm font-medium text-gray-900">
-                              {Math.round((character.voice_settings?.similarity_boost || 0.75) * 100)}%
+                              {Math.round((character.voiceSettings?.similarity_boost || 0.75) * 100)}%
                             </span>
                           </div>
                         </div>

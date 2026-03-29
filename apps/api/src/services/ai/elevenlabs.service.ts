@@ -21,7 +21,12 @@ export class ElevenLabsService {
     };
   }
 
-  async designVoice(prompt: string): Promise<{
+  private getHeaders(apiKey?: string): Record<string, string> {
+    if (apiKey) return { ...this.headers, 'xi-api-key': apiKey };
+    return this.headers;
+  }
+
+  async designVoice(prompt: string, apiKey?: string): Promise<{
     voiceId: string;
     previewUrl: string;
     name: string;
@@ -34,7 +39,7 @@ export class ElevenLabsService {
         voice_description: prompt,
         text: 'Hey, what is up everyone! Welcome back to my channel. Today we are going to talk about something that completely changed my perspective.',
       },
-      { headers: this.headers, timeout: 60000 }
+      { headers: this.getHeaders(apiKey), timeout: 60000 }
     );
 
     const preview = response.data.previews?.[0];
@@ -52,7 +57,8 @@ export class ElevenLabsService {
   async textToSpeech(
     voiceId: string,
     text: string,
-    settings?: VoiceSettings
+    settings?: VoiceSettings,
+    apiKey?: string
   ): Promise<Buffer> {
     logger.info('Generating TTS via ElevenLabs', { voiceId, textLength: text.length });
 
@@ -69,7 +75,7 @@ export class ElevenLabsService {
         },
       },
       {
-        headers: this.headers,
+        headers: this.getHeaders(apiKey),
         responseType: 'arraybuffer',
         timeout: 60000,
       }

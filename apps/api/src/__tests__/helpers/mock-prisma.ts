@@ -32,6 +32,9 @@ export const mockPrisma = {
   apiCostLog: createModelMock(),
   refreshToken: createModelMock(),
   passwordReset: createModelMock(),
+  userApiKey: createModelMock(),
+  studioProject: createModelMock(),
+  studioTrack: createModelMock(),
   $transaction: jest.fn((fn: any): any => {
     if (typeof fn === 'function') {
       return fn(mockPrisma);

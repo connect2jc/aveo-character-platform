@@ -30,14 +30,17 @@ export const env = {
   STRIPE_SECRET_KEY: requireEnv('STRIPE_SECRET_KEY'),
   STRIPE_WEBHOOK_SECRET: requireEnv('STRIPE_WEBHOOK_SECRET'),
 
-  ANTHROPIC_API_KEY: requireEnv('ANTHROPIC_API_KEY'),
-  FAL_API_KEY: requireEnv('FAL_API_KEY'),
-  ELEVENLABS_API_KEY: requireEnv('ELEVENLABS_API_KEY'),
-  HEYGEN_API_KEY: requireEnv('HEYGEN_API_KEY'),
+  ANTHROPIC_API_KEY: optionalEnv('ANTHROPIC_API_KEY', ''),
+  FAL_API_KEY: optionalEnv('FAL_API_KEY', ''),
+  ELEVENLABS_API_KEY: optionalEnv('ELEVENLABS_API_KEY', ''),
+  HEYGEN_API_KEY: optionalEnv('HEYGEN_API_KEY', ''),
+  OPENAI_API_KEY: optionalEnv('OPENAI_API_KEY', ''),
 
-  AWS_ACCESS_KEY_ID: requireEnv('AWS_ACCESS_KEY_ID'),
-  AWS_SECRET_ACCESS_KEY: requireEnv('AWS_SECRET_ACCESS_KEY'),
-  AWS_S3_BUCKET: requireEnv('AWS_S3_BUCKET'),
+  ENCRYPTION_KEY: requireEnv('ENCRYPTION_KEY'),
+
+  AWS_ACCESS_KEY_ID: optionalEnv('AWS_ACCESS_KEY_ID', ''),
+  AWS_SECRET_ACCESS_KEY: optionalEnv('AWS_SECRET_ACCESS_KEY', ''),
+  AWS_S3_BUCKET: optionalEnv('AWS_S3_BUCKET', 'aveo-local'),
   AWS_REGION: optionalEnv('AWS_REGION', 'us-east-1'),
 
   RESEND_API_KEY: requireEnv('RESEND_API_KEY'),

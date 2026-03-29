@@ -3,6 +3,8 @@ import { characterService } from '../services/character.service';
 import { claudeService } from '../services/ai/claude.service';
 import { falService } from '../services/ai/fal.service';
 import { elevenLabsService } from '../services/ai/elevenlabs.service';
+import { openaiService } from '../services/ai/openai.service';
+import { resolveScriptProvider, resolveImageProvider, resolveVoiceProvider } from '../utils/provider-resolver';
 import { AuthRequest } from '../types';
 
 export class CharactersController {
@@ -55,7 +57,14 @@ export class CharactersController {
 
   async generateProfile(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      const profile = await claudeService.generateCharacterProfile(req.body);
+      const { provider, apiKey } = await resolveScriptProvider(req.user!.id);
+
+      let profile;
+      if (provider === 'openai') {
+        profile = await openaiService.generateCharacterProfile(apiKey, req.body);
+      } else {
+        profile = await claudeService.generateCharacterProfile(req.body, apiKey);
+      }
 
       if (req.params.id) {
         await characterService.update(req.user!.id, req.params.id as string, {
@@ -82,7 +91,16 @@ export class CharactersController {
     try {
       const { prompt, style } = req.body;
       const fullPrompt = style ? `${prompt}, ${style} style` : prompt;
-      const result = await falService.generateCharacterImage(fullPrompt, 4);
+
+      const { provider, apiKey } = await resolveImageProvider(req.user!.id);
+
+      let result;
+      if (provider === 'openai') {
+        result = await openaiService.generateCharacterImage(apiKey, fullPrompt, 4);
+      } else {
+        result = await falService.generateCharacterImage(fullPrompt, 4, apiKey);
+      }
+
       res.json({ success: true, data: { images: result.images } });
     } catch (error) {
       next(error);
@@ -143,7 +161,15 @@ export class CharactersController {
   async generateVoice(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { prompt } = req.body;
-      const result = await elevenLabsService.designVoice(prompt);
+      const { provider, apiKey } = await resolveVoiceProvider(req.user!.id);
+
+      if (provider === 'openai') {
+        // OpenAI doesn't support voice design, return a default voice
+        res.json({ success: true, data: { voice: { voiceId: 'nova', previewUrl: '', name: 'OpenAI Nova' } } });
+        return;
+      }
+
+      const result = await elevenLabsService.designVoice(prompt, apiKey);
       res.json({ success: true, data: { voice: result } });
     } catch (error) {
       next(error);
@@ -153,7 +179,14 @@ export class CharactersController {
   async testVoice(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { voiceId, text } = req.body;
-      const audioBuffer = await elevenLabsService.textToSpeech(voiceId, text);
+      const { provider, apiKey } = await resolveVoiceProvider(req.user!.id);
+
+      let audioBuffer: Buffer;
+      if (provider === 'openai') {
+        audioBuffer = await openaiService.textToSpeech(apiKey, text, voiceId || 'nova');
+      } else {
+        audioBuffer = await elevenLabsService.textToSpeech(voiceId, text, undefined, apiKey);
+      }
 
       res.set({
         'Content-Type': 'audio/mpeg',

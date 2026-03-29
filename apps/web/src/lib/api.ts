@@ -20,8 +20,11 @@ function getRefreshToken(): string | null {
 }
 
 function setTokens(tokens: AuthTokens): void {
-  localStorage.setItem('access_token', tokens.access_token);
-  localStorage.setItem('refresh_token', tokens.refresh_token);
+  // Support both camelCase (API response) and snake_case token keys
+  const accessToken = (tokens as unknown as Record<string, string>).accessToken || tokens.access_token;
+  const refreshToken = (tokens as unknown as Record<string, string>).refreshToken || tokens.refresh_token;
+  localStorage.setItem('access_token', accessToken);
+  localStorage.setItem('refresh_token', refreshToken);
 }
 
 function clearTokens(): void {

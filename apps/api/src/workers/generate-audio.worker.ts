@@ -2,6 +2,8 @@ import { Worker, Job, Queue } from 'bullmq';
 import { prisma } from '../config/database';
 import { redisConnection } from '../config/redis';
 import { elevenLabsService } from '../services/ai/elevenlabs.service';
+import { openaiService } from '../services/ai/openai.service';
+import { resolveVoiceProvider } from '../utils/provider-resolver';
 import { storageService } from '../services/storage.service';
 import { logger } from '../utils/logger';
 
@@ -21,8 +23,14 @@ export const audioWorker = new Worker<AudioJobData>(
 
     try {
       const character = await prisma.character.findUnique({ where: { id: characterId } });
-      if (!character || !character.elevenlabsVoiceId) {
-        throw new Error('Character or voice not found');
+      if (!character) {
+        throw new Error('Character not found');
+      }
+
+      const { provider: voiceProvider, apiKey: voiceApiKey } = await resolveVoiceProvider(job.data.userId);
+
+      if (voiceProvider === 'elevenlabs' && !character.elevenlabsVoiceId) {
+        throw new Error('Character has no ElevenLabs voice ID');
       }
 
       const clips = await prisma.videoClip.findMany({
@@ -35,11 +43,17 @@ export const audioWorker = new Worker<AudioJobData>(
       for (const clip of clips) {
         await job.updateProgress((clip.clipIndex / clips.length) * 100);
 
-        const audioBuffer = await elevenLabsService.textToSpeech(
-          character.elevenlabsVoiceId,
-          clip.scriptSegment,
-          character.voiceSettings as any
-        );
+        let audioBuffer: Buffer;
+        if (voiceProvider === 'openai') {
+          audioBuffer = await openaiService.textToSpeech(voiceApiKey, clip.scriptSegment, character.elevenlabsVoiceId || 'nova');
+        } else {
+          audioBuffer = await elevenLabsService.textToSpeech(
+            character.elevenlabsVoiceId!,
+            clip.scriptSegment,
+            character.voiceSettings as any,
+            voiceApiKey
+          );
+        }
 
         const { url } = await storageService.uploadFile(
           audioBuffer,

@@ -191,6 +191,55 @@ export function createTestVideoClip(overrides: Partial<any> = {}) {
   };
 }
 
+export function createTestUserApiKey(overrides: Partial<any> = {}) {
+  return {
+    id: 'test-api-key-id',
+    userId: 'test-user-id',
+    provider: 'openai',
+    encryptedKey: 'encrypted-test-key',
+    iv: 'test-iv-hex',
+    isValid: true,
+    createdAt: new Date('2026-03-01'),
+    updatedAt: new Date('2026-03-01'),
+    ...overrides,
+  };
+}
+
+export function createTestStudioProject(overrides: Partial<any> = {}) {
+  return {
+    id: 'test-project-id',
+    userId: 'test-user-id',
+    title: 'Test Project',
+    status: 'DRAFT',
+    outputUrl: null,
+    thumbnailUrl: null,
+    totalDuration: null,
+    aspectRatio: '9:16',
+    createdAt: new Date('2026-03-01'),
+    updatedAt: new Date('2026-03-01'),
+    tracks: [],
+    ...overrides,
+  };
+}
+
+export function createTestStudioTrack(overrides: Partial<any> = {}) {
+  return {
+    id: 'test-track-id',
+    projectId: 'test-project-id',
+    type: 'video',
+    sourceUrl: 'https://storage.example.com/studio/video.mp4',
+    fileName: 'video.mp4',
+    startTime: 0,
+    duration: 15,
+    trimStart: 0,
+    trimEnd: null,
+    volume: 1.0,
+    trackIndex: 0,
+    createdAt: new Date('2026-03-01'),
+    ...overrides,
+  };
+}
+
 export function createTestPlatformConnection(overrides: Partial<any> = {}) {
   return {
     id: 'test-connection-id',

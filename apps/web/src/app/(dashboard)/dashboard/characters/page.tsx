@@ -9,7 +9,7 @@ import { SkeletonCard } from '@/components/ui/skeleton';
 import { useCharacters } from '@/hooks/use-characters';
 import { cn } from '@/lib/utils';
 
-type StatusFilter = 'all' | 'active' | 'draft' | 'archived';
+type StatusFilter = 'all' | 'ACTIVE' | 'DRAFT' | 'ARCHIVED';
 
 export default function CharactersPage() {
   const { characters, isLoading, error, deleteCharacter } = useCharacters();
@@ -21,9 +21,9 @@ export default function CharactersPage() {
 
   const statusCounts = {
     all: characters.length,
-    active: characters.filter((c) => c.status === 'active').length,
-    draft: characters.filter((c) => c.status === 'draft').length,
-    archived: characters.filter((c) => c.status === 'archived').length,
+    ACTIVE: characters.filter((c) => c.status === 'ACTIVE').length,
+    DRAFT: characters.filter((c) => c.status === 'DRAFT').length,
+    ARCHIVED: characters.filter((c) => c.status === 'ARCHIVED').length,
   };
 
   return (
@@ -47,7 +47,7 @@ export default function CharactersPage() {
       {/* Status Filter Tabs */}
       {characters.length > 0 && (
         <div className="flex items-center gap-1 rounded-xl bg-gray-100 p-1">
-          {(['all', 'active', 'draft', 'archived'] as StatusFilter[]).map((status) => (
+          {(['all', 'ACTIVE', 'DRAFT', 'ARCHIVED'] as StatusFilter[]).map((status) => (
             <button
               key={status}
               onClick={() => setStatusFilter(status)}

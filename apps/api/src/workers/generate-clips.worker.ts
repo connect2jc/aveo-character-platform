@@ -2,6 +2,7 @@ import { Worker, Job, Queue } from 'bullmq';
 import { prisma } from '../config/database';
 import { redisConnection } from '../config/redis';
 import { heygenService } from '../services/ai/heygen.service';
+import { resolveHeygenKey } from '../utils/provider-resolver';
 import { logger } from '../utils/logger';
 
 const stitchQueue = new Queue('stitch-video', { connection: redisConnection });
@@ -28,6 +29,8 @@ export const clipsWorker = new Worker<ClipsJobData>(
         throw new Error('Character or base image not found');
       }
 
+      const heygenApiKey = await resolveHeygenKey(job.data.userId);
+
       const clips = await prisma.videoClip.findMany({
         where: { videoId, status: 'PROCESSING' },
         orderBy: { clipIndex: 'asc' },
@@ -52,7 +55,9 @@ export const clipsWorker = new Worker<ClipsJobData>(
 
         const { jobId } = await heygenService.createPhotoToVideo(
           imageUrl,
-          clip.audioUrl
+          clip.audioUrl,
+          undefined,
+          heygenApiKey
         );
 
         await prisma.videoClip.update({
@@ -89,7 +94,9 @@ export const clipsWorker = new Worker<ClipsJobData>(
             if (clip.retryCount < 3) {
               const { jobId: newJobId } = await heygenService.createPhotoToVideo(
                 character.baseImageUrl,
-                clip.audioUrl!
+                clip.audioUrl!,
+                undefined,
+                heygenApiKey
               );
               await prisma.videoClip.update({
                 where: { id: clip.id },
@@ -105,7 +112,7 @@ export const clipsWorker = new Worker<ClipsJobData>(
           }
 
           if (clip.heygenJobId) {
-            const status = await heygenService.getVideoStatus(clip.heygenJobId);
+            const status = await heygenService.getVideoStatus(clip.heygenJobId, heygenApiKey);
 
             if (status.status === 'completed' && status.videoUrl) {
               await prisma.videoClip.update({

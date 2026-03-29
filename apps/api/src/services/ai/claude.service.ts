@@ -1,15 +1,21 @@
+import Anthropic from '@anthropic-ai/sdk';
 import { anthropic } from '../../config/claude';
 import { GeneratedProfile, GeneratedScript, GeneratedCalendar } from '../../types';
 import { logger } from '../../utils/logger';
 
 export class ClaudeService {
+  private getClient(apiKey?: string): Anthropic {
+    if (apiKey) return new Anthropic({ apiKey });
+    return anthropic;
+  }
+
   async generateCharacterProfile(inputs: {
     name: string;
     niche: string;
     targetAudience: string;
     style?: string;
     inspirations?: string[];
-  }): Promise<GeneratedProfile> {
+  }, apiKey?: string): Promise<GeneratedProfile> {
     const systemPrompt = `You are an expert character designer for social media AI influencers. Your job is to create detailed, compelling character profiles that feel authentic and engaging. The character must have a clear personality, consistent voice, and relatable backstory that resonates with their target audience.
 
 Always respond with valid JSON matching the exact schema requested. Do not include markdown formatting or code blocks.`;
@@ -37,7 +43,7 @@ Return a JSON object with these exact fields:
   "antiKeywords": ["words", "they", "would", "never", "say"]
 }`;
 
-    const response = await anthropic.messages.create({
+    const response = await this.getClient(apiKey).messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 2000,
       system: systemPrompt,
@@ -65,7 +71,7 @@ Return a JSON object with these exact fields:
     personality: string;
     speakingStyle: string;
     coreBelief: string;
-  }, month: string, postsPerDay: number): Promise<GeneratedCalendar> {
+  }, month: string, postsPerDay: number, apiKey?: string): Promise<GeneratedCalendar> {
     const systemPrompt = `You are a viral content strategist specializing in short-form video content. You create monthly content calendars that maximize engagement through strategic topic sequencing, emotional hooks, and trend awareness.
 
 Always respond with valid JSON matching the exact schema requested. Do not include markdown formatting or code blocks.`;
@@ -107,7 +113,7 @@ Return a JSON object:
 
 Generate ${daysInMonth * postsPerDay} slots total. Vary topics, emotional triggers, and hooks. Include a mix of educational, entertaining, and inspirational content. Optimize posting times for maximum reach.`;
 
-    const response = await anthropic.messages.create({
+    const response = await this.getClient(apiKey).messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 8000,
       system: systemPrompt,
@@ -141,7 +147,7 @@ Generate ${daysInMonth * postsPerDay} slots total. Vary topics, emotional trigge
     emotionalTrigger?: string;
     cta?: string;
     platform?: string;
-  }): Promise<GeneratedScript> {
+  }, apiKey?: string): Promise<GeneratedScript> {
     const systemPrompt = `You are a viral script writer. You write short-form video scripts (30-60 seconds) that hook viewers in the first 2 seconds, deliver value, and drive engagement. Every script must feel authentic to the character's voice and never use their anti-keywords.
 
 Always respond with valid JSON matching the exact schema requested. Do not include markdown formatting or code blocks.`;
@@ -181,7 +187,7 @@ The script should:
 4. End with a clear CTA
 5. Be conversational, not scripted-sounding`;
 
-    const response = await anthropic.messages.create({
+    const response = await this.getClient(apiKey).messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 2000,
       system: systemPrompt,
@@ -209,7 +215,7 @@ The script should:
     coreBelief: string;
     niche: string;
     antiKeywords: string[];
-  }, originalScript: string, sourceReference?: string): Promise<GeneratedScript> {
+  }, originalScript: string, sourceReference?: string, apiKey?: string): Promise<GeneratedScript> {
     const systemPrompt = `You are a viral content adapter. You take existing viral scripts and rewrite them in a specific character's voice while maintaining the viral structure. The result must feel original and authentic to the character.
 
 Always respond with valid JSON matching the exact schema requested. Do not include markdown formatting or code blocks.`;
@@ -241,7 +247,7 @@ Return a JSON object:
 
 Keep the viral structure but make it 100% ${character.name}'s voice.`;
 
-    const response = await anthropic.messages.create({
+    const response = await this.getClient(apiKey).messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 2000,
       system: systemPrompt,

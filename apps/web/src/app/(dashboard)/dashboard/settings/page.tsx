@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,19 +9,28 @@ import {
   AlertTriangle,
   Bell,
   Camera,
+  Check,
+  Cpu,
+  Eye,
+  EyeOff,
   Key,
+  Loader2,
   Mail,
   Shield,
   Trash2,
   User,
+  X,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import { Avatar } from '@/components/ui/avatar';
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useAuthStore } from '@/stores/auth-store';
 import { cn } from '@/lib/utils';
+import api from '@/lib/api';
+import type { ApiKeyStatus, ProviderPreferences } from '@/types';
 
 const profileSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -55,6 +64,14 @@ interface NotificationSetting {
   enabled: boolean;
 }
 
+const PROVIDER_CONFIG = [
+  { provider: 'openai', label: 'OpenAI', placeholder: 'sk-...' },
+  { provider: 'anthropic', label: 'Anthropic', placeholder: 'sk-ant-...' },
+  { provider: 'fal', label: 'FAL', placeholder: 'fal_...' },
+  { provider: 'elevenlabs', label: 'ElevenLabs', placeholder: 'xi-...' },
+  { provider: 'heygen', label: 'HeyGen', placeholder: 'heygen_...' },
+] as const;
+
 export default function SettingsPage() {
   const { user } = useAuthStore();
   const [isSaving, setIsSaving] = useState(false);
@@ -67,6 +84,99 @@ export default function SettingsPage() {
     { id: 'marketing', label: 'Product Updates', description: 'News about new features and improvements', enabled: false },
     { id: 'usage_alerts', label: 'Usage Alerts', description: 'Get warned when approaching plan limits', enabled: true },
   ]);
+
+  // BYOK state
+  const [apiKeys, setApiKeys] = useState<ApiKeyStatus[]>([]);
+  const [keyInputs, setKeyInputs] = useState<Record<string, string>>({});
+  const [keyVisible, setKeyVisible] = useState<Record<string, boolean>>({});
+  const [testing, setTesting] = useState<Record<string, boolean>>({});
+  const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const [preferences, setPreferences] = useState<ProviderPreferences>({
+    scriptProvider: 'anthropic',
+    imageProvider: 'fal',
+    voiceProvider: 'elevenlabs',
+  });
+
+  const loadApiKeys = useCallback(async () => {
+    try {
+      const { data } = await api.get('/api/v1/settings/api-keys');
+      setApiKeys(data.data.keys);
+    } catch {
+      // Silently fail on load
+    }
+  }, []);
+
+  const loadPreferences = useCallback(async () => {
+    try {
+      const { data } = await api.get('/api/v1/settings/preferences');
+      setPreferences(data.data.preferences);
+    } catch {
+      // Silently fail on load
+    }
+  }, []);
+
+  useEffect(() => {
+    loadApiKeys();
+    loadPreferences();
+  }, [loadApiKeys, loadPreferences]);
+
+  const saveKey = async (provider: string) => {
+    const value = keyInputs[provider];
+    if (!value) return;
+
+    setSaving((prev) => ({ ...prev, [provider]: true }));
+    try {
+      await api.put(`/api/v1/settings/api-keys/${provider}`, { apiKey: value });
+      toast.success(`${provider} key saved`);
+      setKeyInputs((prev) => ({ ...prev, [provider]: '' }));
+      loadApiKeys();
+    } catch {
+      toast.error(`Failed to save ${provider} key`);
+    } finally {
+      setSaving((prev) => ({ ...prev, [provider]: false }));
+    }
+  };
+
+  const testKey = async (provider: string) => {
+    setTesting((prev) => ({ ...prev, [provider]: true }));
+    try {
+      const { data } = await api.post(`/api/v1/settings/api-keys/${provider}/test`);
+      if (data.data.valid) {
+        toast.success(`${provider} key is valid`);
+      } else {
+        toast.error(`${provider} key is invalid: ${data.data.error}`);
+      }
+      loadApiKeys();
+    } catch {
+      toast.error(`Failed to test ${provider} key`);
+    } finally {
+      setTesting((prev) => ({ ...prev, [provider]: false }));
+    }
+  };
+
+  const removeKey = async (provider: string) => {
+    try {
+      await api.delete(`/api/v1/settings/api-keys/${provider}`);
+      toast.success(`${provider} key removed`);
+      loadApiKeys();
+    } catch {
+      toast.error(`Failed to remove ${provider} key`);
+    }
+  };
+
+  const updatePreference = async (field: string, value: string) => {
+    try {
+      const { data } = await api.put('/api/v1/settings/preferences', { [field]: value });
+      setPreferences(data.data.preferences);
+      toast.success('Provider preference updated');
+    } catch {
+      toast.error('Failed to update preference');
+    }
+  };
+
+  const getKeyStatus = (provider: string): ApiKeyStatus | undefined => {
+    return apiKeys.find((k) => k.provider === provider);
+  };
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -120,6 +230,140 @@ export default function SettingsPage() {
           Manage your account settings and preferences.
         </p>
       </div>
+
+      {/* AI Providers Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Cpu className="h-4 w-4 text-indigo-500" />
+            AI Providers
+          </CardTitle>
+          <CardDescription>Choose your preferred AI providers and add your API keys</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Provider Preferences */}
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-gray-700">Provider Preferences</p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Select
+                label="Script Generation"
+                value={preferences.scriptProvider}
+                onChange={(e) => updatePreference('scriptProvider', e.target.value)}
+                options={[
+                  { value: 'anthropic', label: 'Anthropic (Claude)' },
+                  { value: 'openai', label: 'OpenAI (GPT-4o)' },
+                ]}
+              />
+              <Select
+                label="Image Generation"
+                value={preferences.imageProvider}
+                onChange={(e) => updatePreference('imageProvider', e.target.value)}
+                options={[
+                  { value: 'fal', label: 'FAL (Flux)' },
+                  { value: 'openai', label: 'OpenAI (DALL-E 3)' },
+                ]}
+              />
+              <Select
+                label="Voice Synthesis"
+                value={preferences.voiceProvider}
+                onChange={(e) => updatePreference('voiceProvider', e.target.value)}
+                options={[
+                  { value: 'elevenlabs', label: 'ElevenLabs' },
+                  { value: 'openai', label: 'OpenAI TTS' },
+                ]}
+              />
+            </div>
+          </div>
+
+          {/* API Keys */}
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-gray-700">API Keys</p>
+            <p className="text-xs text-gray-500">Your keys are encrypted and stored securely. Add keys for the providers you want to use.</p>
+
+            {PROVIDER_CONFIG.map(({ provider, label, placeholder }) => {
+              const status = getKeyStatus(provider);
+              return (
+                <div key={provider} className="rounded-lg border border-gray-200 p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-900">{label}</span>
+                      {status?.hasKey && (
+                        <span className={cn(
+                          'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
+                          status.isValid
+                            ? 'bg-green-50 text-green-700'
+                            : 'bg-red-50 text-red-700'
+                        )}>
+                          {status.isValid ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                          {status.isValid ? 'Valid' : 'Invalid'}
+                        </span>
+                      )}
+                    </div>
+                    {status?.hasKey && (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() => testKey(provider)}
+                          disabled={testing[provider]}
+                        >
+                          {testing[provider] ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            'Test'
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs text-red-600 hover:text-red-700"
+                          onClick={() => removeKey(provider)}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {status?.hasKey ? (
+                    <p className="text-xs text-gray-500 font-mono">
+                      {'*'.repeat(20)}...{provider === 'openai' ? 'xxxx' : '****'}
+                    </p>
+                  ) : (
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type={keyVisible[provider] ? 'text' : 'password'}
+                          value={keyInputs[provider] || ''}
+                          onChange={(e) => setKeyInputs((prev) => ({ ...prev, [provider]: e.target.value }))}
+                          placeholder={placeholder}
+                          className="w-full h-9 rounded-lg border border-gray-300 px-3 pr-8 text-sm font-mono focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setKeyVisible((prev) => ({ ...prev, [provider]: !prev[provider] }))}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {keyVisible[provider] ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                        </button>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="h-9"
+                        onClick={() => saveKey(provider)}
+                        disabled={!keyInputs[provider] || saving[provider]}
+                      >
+                        {saving[provider] ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Save'}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Profile Section */}
       <Card>

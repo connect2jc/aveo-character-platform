@@ -5,6 +5,7 @@ import { audioWorker } from './generate-audio.worker';
 import { clipsWorker } from './generate-clips.worker';
 import { stitchWorker } from './stitch-video.worker';
 import { scriptsWorker } from './generate-scripts.worker';
+import { renderWorker } from './render-studio.worker';
 
 logger.info('Starting all workers...');
 
@@ -36,6 +37,13 @@ scriptsWorker.on('failed', (job, err) => {
   logger.error(`Scripts worker failed job ${job?.id}`, { error: err.message });
 });
 
+renderWorker.on('completed', (job) => {
+  logger.info(`Render worker completed job ${job.id}`);
+});
+renderWorker.on('failed', (job, err) => {
+  logger.error(`Render worker failed job ${job?.id}`, { error: err.message });
+});
+
 logger.info('All workers started successfully');
 
 // Graceful shutdown
@@ -46,6 +54,7 @@ const shutdown = async () => {
     clipsWorker.close(),
     stitchWorker.close(),
     scriptsWorker.close(),
+    renderWorker.close(),
   ]);
   logger.info('All workers shut down');
   process.exit(0);

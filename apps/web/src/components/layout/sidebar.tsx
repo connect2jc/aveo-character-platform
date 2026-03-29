@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Users,
   Video,
+  Film,
   Share2,
   CreditCard,
   Settings,
@@ -23,6 +24,7 @@ const mainNav = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Characters', href: '/dashboard/characters', icon: Users },
   { label: 'Videos', href: '/dashboard/videos', icon: Video },
+  { label: 'Studio', href: '/dashboard/studio', icon: Film },
   { label: 'Publishing', href: '/dashboard/publishing', icon: Share2 },
 ];
 
