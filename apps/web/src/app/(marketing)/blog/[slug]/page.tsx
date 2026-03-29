@@ -1,34 +1,101 @@
 import Link from 'next/link';
+import { Metadata } from 'next';
+
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://aveo.ai';
+
+const posts: Record<string, { title: string; excerpt: string; date: string; category: string; readTime: string }> = {
+  'getting-started-with-ai-characters': {
+    title: 'Getting Started with AI Characters for Short Form Video',
+    excerpt: 'Learn how to create your first AI character and start producing engaging content at scale.',
+    date: '2026-03-15',
+    category: 'Tutorial',
+    readTime: '5 min read',
+  },
+  'best-hooks-for-tiktok': {
+    title: 'The 10 Best Hook Formulas for TikTok Videos',
+    excerpt: 'Discover the hook patterns that drive the highest engagement on TikTok and other short form platforms.',
+    date: '2026-03-10',
+    category: 'Strategy',
+    readTime: '7 min read',
+  },
+  'scaling-content-production': {
+    title: 'How to Scale From 10 to 100 Videos Per Month',
+    excerpt: 'A step by step guide to ramping up your content production using AI automation.',
+    date: '2026-03-05',
+    category: 'Growth',
+    readTime: '6 min read',
+  },
+  'ai-voice-synthesis-guide': {
+    title: 'AI Voice Synthesis: A Complete Guide for Content Creators',
+    excerpt: 'Everything you need to know about AI voice technology and how to choose the right voice for your brand.',
+    date: '2026-02-28',
+    category: 'Technology',
+    readTime: '8 min read',
+  },
+};
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const post = posts[params.slug];
+  const title = post?.title || params.slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const description = post?.excerpt || '';
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'article',
+      publishedTime: post?.date,
+      url: `${BASE_URL}/blog/${params.slug}`,
+    },
+    twitter: { card: 'summary_large_image', title, description },
+  };
+}
 
 export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const title = params.slug
-    .split('-')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+  const post = posts[params.slug];
+  const title = post?.title || params.slug.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: title,
+    description: post?.excerpt,
+    datePublished: post?.date,
+    author: { '@type': 'Organization', name: 'Aveo' },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Aveo',
+      url: BASE_URL,
+    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': `${BASE_URL}/blog/${params.slug}` },
+  };
 
   return (
     <article className="bg-white py-20">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <Link
             href="/blog"
             className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
           >
-            &larr; Back to Blog
+            Back to Blog
           </Link>
         </div>
 
         <header className="mb-12">
           <div className="flex items-center gap-3">
             <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-medium text-indigo-700">
-              Tutorial
+              {post?.category || 'Tutorial'}
             </span>
-            <span className="text-sm text-gray-400">5 min read</span>
+            <span className="text-sm text-gray-400">{post?.readTime || '5 min read'}</span>
           </div>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-gray-900">
             {title}
           </h1>
-          <p className="mt-4 text-gray-500">March 15, 2026</p>
+          <p className="mt-4 text-gray-500">{post?.date || 'March 15, 2026'}</p>
         </header>
 
         <div className="prose prose-lg max-w-none">

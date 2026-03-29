@@ -12,22 +12,29 @@ export default function NewCharacterPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (data: {
-    name: string;
     niche: string;
-    description?: string;
-    target_audience?: string;
-    personality_traits: string;
-    speaking_style?: string;
+    age_range_min: number;
+    age_range_max: number;
+    pain_points: string[];
+    desires?: string;
+    name: string;
+    age: number;
+    gender: string;
+    emotional_role: string;
+    warmth: number;
+    energy: number;
+    authority: number;
+    personality_tags: string[];
   }) => {
     setIsLoading(true);
     try {
       const character = await createCharacter({
         name: data.name,
         niche: data.niche,
-        description: data.description,
-        target_audience: data.target_audience,
-        personality_traits: data.personality_traits.split(',').map((t) => t.trim()),
-        speaking_style: data.speaking_style,
+        description: `${data.emotional_role} character for ${data.age_range_min}-${data.age_range_max} audience`,
+        target_audience: data.pain_points.join(', '),
+        personality_traits: data.personality_tags,
+        speaking_style: `Warmth: ${data.warmth}, Energy: ${data.energy}, Authority: ${data.authority}`,
       });
       toast.success('Character created successfully!');
       router.push(`/dashboard/characters/${character.id}`);
