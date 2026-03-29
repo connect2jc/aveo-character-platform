@@ -1,0 +1,357 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserPlan {
+  FREE
+  STARTER
+  PRO
+  AGENCY
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum CharacterStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum HeygenAvatarType {
+  PHOTO
+  STUDIO
+}
+
+enum VariationType {
+  EXPRESSION
+  OUTFIT
+  BACKGROUND
+  ANGLE
+  STYLE
+}
+
+enum CalendarStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+}
+
+enum ContentType {
+  SHORT_FORM
+  LONG_FORM
+  STORY
+  CAROUSEL
+  LIVE
+}
+
+enum Platform {
+  TIKTOK
+  INSTAGRAM
+  YOUTUBE
+  TWITTER
+  LINKEDIN
+}
+
+enum PublishStatus {
+  SCHEDULED
+  SCRIPT_READY
+  VIDEO_READY
+  PUBLISHED
+  FAILED
+  SKIPPED
+}
+
+enum ScriptStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+  USED
+}
+
+enum GenerationMethod {
+  AI_GENERATED
+  VIRAL_REWRITE
+  MANUAL
+}
+
+enum VideoStatus {
+  PENDING
+  GENERATING_AUDIO
+  GENERATING_CLIPS
+  STITCHING
+  QA_READY
+  APPROVED
+  PUBLISHED
+  FAILED
+}
+
+enum ClipStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id                    String              @id @default(uuid())
+  email                 String              @unique
+  passwordHash          String
+  name                  String
+  role                  UserRole            @default(USER)
+  plan                  UserPlan            @default(FREE)
+  stripeCustomerId      String?             @unique
+  stripeSubscriptionId  String?             @unique
+  status                UserStatus          @default(ACTIVE)
+  onboardingCompleted   Boolean             @default(false)
+  resetToken            String?
+  resetTokenExpiry      DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  characters            Character[]
+  usageTracking         UsageTracking[]
+  platformConnections   PlatformConnection[]
+  videos                Video[]
+
+  @@index([email])
+  @@index([stripeCustomerId])
+}
+
+model Character {
+  id                String           @id @default(uuid())
+  userId            String
+  name              String
+  age               Int?
+  originBackstory   String?          @db.Text
+  coreBelief        String?
+  personality       String?          @db.Text
+  speakingStyle     String?          @db.Text
+  niche             String?
+  targetAudience    String?          @db.Text
+  baseImageUrl      String?
+  imagePrompt       String?          @db.Text
+  visualStyle       String?
+  elevenlabsVoiceId String?
+  voicePrompt       String?          @db.Text
+  voiceSettings     Json?
+  voiceSampleUrl    String?
+  heygenAvatarType  HeygenAvatarType @default(PHOTO)
+  antiKeywords      String[]         @default([])
+  status            CharacterStatus  @default(DRAFT)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variations        CharacterVariation[]
+  calendars         ContentCalendar[]
+  contentSlots      ContentSlot[]
+  scripts           Script[]
+  videos            Video[]
+
+  @@index([userId])
+  @@index([userId, status])
+}
+
+model CharacterVariation {
+  id              String        @id @default(uuid())
+  characterId     String
+  variationType   VariationType
+  imageUrl        String
+  imagePrompt     String?       @db.Text
+  description     String?
+  createdAt       DateTime      @default(now())
+
+  character       Character     @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  videos          Video[]
+
+  @@index([characterId])
+}
+
+model ContentCalendar {
+  id              String         @id @default(uuid())
+  characterId     String
+  month           String
+  strategyNotes   String?        @db.Text
+  themes          String[]       @default([])
+  postsPerDay     Int            @default(2)
+  status          CalendarStatus @default(DRAFT)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  character       Character      @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  slots           ContentSlot[]
+
+  @@unique([characterId, month])
+  @@index([characterId])
+}
+
+model ContentSlot {
+  id                String        @id @default(uuid())
+  calendarId        String
+  characterId       String
+  scheduledDate     DateTime
+  scheduledTime     String?
+  dayOfWeek         String?
+  slotNumber        Int           @default(1)
+  contentType       ContentType   @default(SHORT_FORM)
+  topic             String?
+  hook              String?       @db.Text
+  emotionalTrigger  String?
+  cta               String?
+  scriptId          String?       @unique
+  videoId           String?       @unique
+  platform          Platform      @default(TIKTOK)
+  publishStatus     PublishStatus @default(SCHEDULED)
+  publishedAt       DateTime?
+  publishedUrl      String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  calendar          ContentCalendar @relation(fields: [calendarId], references: [id], onDelete: Cascade)
+  character         Character       @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  script            Script?         @relation(fields: [scriptId], references: [id])
+  video             Video?          @relation(fields: [videoId], references: [id])
+
+  @@index([calendarId])
+  @@index([characterId])
+  @@index([scheduledDate])
+  @@index([publishStatus])
+}
+
+model Script {
+  id                      String           @id @default(uuid())
+  characterId             String
+  title                   String
+  fullScript              String           @db.Text
+  hook                    String?          @db.Text
+  body                    String?          @db.Text
+  cta                     String?          @db.Text
+  emotionalTrigger        String?
+  estimatedDurationSeconds Int?
+  targetPlatform          Platform         @default(TIKTOK)
+  wordCount               Int?
+  generationMethod        GenerationMethod @default(AI_GENERATED)
+  sourceReference         String?
+  claudePrompt            String?          @db.Text
+  status                  ScriptStatus     @default(DRAFT)
+  reviewedAt              DateTime?
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+
+  character               Character        @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  contentSlot             ContentSlot?
+  videos                  Video[]
+
+  @@index([characterId])
+  @@index([characterId, status])
+}
+
+model Video {
+  id                    String      @id @default(uuid())
+  characterId           String
+  scriptId              String?
+  userId                String
+  clipCount             Int         @default(0)
+  totalDurationSeconds  Int?
+  finalVideoUrl         String?
+  thumbnailUrl          String?
+  aspectRatio           String      @default("9:16")
+  resolution            String      @default("1080x1920")
+  hasCaptions           Boolean     @default(false)
+  variationId           String?
+  status                VideoStatus @default(PENDING)
+  qaNotes               String?     @db.Text
+  heygenCreditsUsed     Float       @default(0)
+  elevenlabsCost        Float       @default(0)
+  totalGenerationCost   Float       @default(0)
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  character             Character           @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  script                Script?             @relation(fields: [scriptId], references: [id])
+  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variation             CharacterVariation? @relation(fields: [variationId], references: [id])
+  clips                 VideoClip[]
+  contentSlot           ContentSlot?
+
+  @@index([characterId])
+  @@index([userId])
+  @@index([status])
+}
+
+model VideoClip {
+  id              String     @id @default(uuid())
+  videoId         String
+  clipIndex       Int
+  scriptSegment   String     @db.Text
+  durationSeconds Float?
+  audioUrl        String?
+  heygenJobId     String?
+  clipUrl         String?
+  status          ClipStatus @default(PENDING)
+  errorMessage    String?
+  retryCount      Int        @default(0)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  video           Video      @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, clipIndex])
+  @@index([videoId])
+  @@index([heygenJobId])
+}
+
+model UsageTracking {
+  id                  String   @id @default(uuid())
+  userId              String
+  month               String
+  charactersAllowed   Int      @default(1)
+  videosAllowed       Int      @default(10)
+  charactersCreated   Int      @default(0)
+  videosGenerated     Int      @default(0)
+  videosPublished     Int      @default(0)
+  scriptsGenerated    Int      @default(0)
+  totalHeygenCost     Float    @default(0)
+  totalElevenlabsCost Float    @default(0)
+  totalFalCost        Float    @default(0)
+  totalClaudeCost     Float    @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month])
+  @@index([userId])
+}
+
+model PlatformConnection {
+  id            String   @id @default(uuid())
+  userId        String
+  platform      Platform
+  accessToken   String   @db.Text
+  refreshToken  String?  @db.Text
+  expiresAt     DateTime?
+  accountName   String?
+  accountId     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform])
+  @@index([userId])
+}
