@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Download, Loader2, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { PreviewPlayer } from '@/components/studio/preview-player';
 import { VideoGrid } from '@/components/studio/video-grid';
 import { Timeline } from '@/components/studio/timeline';
@@ -91,7 +90,7 @@ export default function StudioEditorPage() {
   const handleAddClip = async (url: string, fileName: string, type: 'video' | 'audio') => {
     try {
       const nextIndex = (project?.tracks || []).filter((t) => t.type === type).length;
-      const track = await addTrack(projectId, {
+      await addTrack(projectId, {
         type,
         sourceUrl: url,
         fileName,
@@ -141,9 +140,10 @@ export default function StudioEditorPage() {
       await startRender(projectId);
       toast.success('Render started');
       pollRender();
-    } catch (err: any) {
+    } catch (err: unknown) {
       setRendering(false);
-      toast.error(err.response?.data?.error?.message || 'Failed to start render');
+      const e = err as { response?: { data?: { error?: { message?: string } } } };
+      toast.error(e.response?.data?.error?.message || 'Failed to start render');
     }
   };
 

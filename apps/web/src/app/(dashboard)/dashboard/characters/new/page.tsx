@@ -32,7 +32,7 @@ export default function NewCharacterPage() {
         name: data.name,
         niche: data.niche,
         targetAudience: `${data.age_range_min}-${data.age_range_max} year olds. Pain points: ${data.pain_points.join(', ')}${data.desires ? '. Desires: ' + data.desires : ''}`,
-      } as any);
+      } as Parameters<typeof createCharacter>[0]);
       toast.success('Character created successfully!');
       router.push(`/dashboard/characters/${character.id}`);
     } catch {
