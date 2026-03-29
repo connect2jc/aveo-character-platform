@@ -27,8 +27,8 @@ export const env = {
   JWT_EXPIRY: optionalEnv('JWT_EXPIRY', '15m'),
   JWT_REFRESH_EXPIRY: optionalEnv('JWT_REFRESH_EXPIRY', '7d'),
 
-  STRIPE_SECRET_KEY: requireEnv('STRIPE_SECRET_KEY'),
-  STRIPE_WEBHOOK_SECRET: requireEnv('STRIPE_WEBHOOK_SECRET'),
+  STRIPE_SECRET_KEY: optionalEnv('STRIPE_SECRET_KEY', ''),
+  STRIPE_WEBHOOK_SECRET: optionalEnv('STRIPE_WEBHOOK_SECRET', ''),
 
   ANTHROPIC_API_KEY: optionalEnv('ANTHROPIC_API_KEY', ''),
   FAL_API_KEY: optionalEnv('FAL_API_KEY', ''),
@@ -43,7 +43,7 @@ export const env = {
   AWS_S3_BUCKET: optionalEnv('AWS_S3_BUCKET', 'aveo-local'),
   AWS_REGION: optionalEnv('AWS_REGION', 'us-east-1'),
 
-  RESEND_API_KEY: requireEnv('RESEND_API_KEY'),
+  RESEND_API_KEY: optionalEnv('RESEND_API_KEY', ''),
 
   APP_URL: optionalEnv('APP_URL', 'http://localhost:3000'),
   API_URL: optionalEnv('API_URL', 'http://localhost:4000'),

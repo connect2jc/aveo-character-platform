@@ -90,10 +90,12 @@ app.use((_req, res) => {
 // Global error handler
 app.use(errorHandler);
 
-// Start server
-app.listen(env.PORT, () => {
-  logger.info(`Aveo API server running on port ${env.PORT}`);
-  logger.info(`Environment: ${env.NODE_ENV}`);
-});
+// Start server (skip in serverless/Vercel environment)
+if (!process.env.VERCEL) {
+  app.listen(env.PORT, () => {
+    logger.info(`Aveo API server running on port ${env.PORT}`);
+    logger.info(`Environment: ${env.NODE_ENV}`);
+  });
+}
 
 export default app;
